@@ -16,7 +16,7 @@ export default function AudioPlayer(props: {
     }, [props.audioUrl]);
 
     return (
-        <div className='flex relative z-10 p-4 w-full mt-4'>
+        <div className='flex relative z-10 p-4 w-full'>
             <audio
                 ref={audioPlayer}
                 controls

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { AudioManager } from "./components/AudioManager";
 import Transcript from "./components/Transcript";
 import { useTranscriber } from "./hooks/useTranscriber";
@@ -18,46 +18,70 @@ function App() {
     const transcriber = useTranscriber();
     const [notes, setNotes] = useState<Note[]>([]);
     const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
+    const [isLoaded, setIsLoaded] = useState(false);
 
+    // Load notes from localStorage
     useEffect(() => {
-        // Load notes from local storage
-        const storedNotes = localStorage.getItem('notes');
-        if (storedNotes) {
-            setNotes(JSON.parse(storedNotes));
-        }
+        const loadNotes = () => {
+            const storedNotes = localStorage.getItem('notes');
+            console.log('Stored notes from localStorage:', storedNotes);
+            if (storedNotes) {
+                try {
+                    const parsedNotes = JSON.parse(storedNotes);
+                    setNotes(parsedNotes);
+                    console.log('Loaded notes from local storage:', parsedNotes);
+                } catch (error) {
+                    console.error('Error parsing stored notes:', error);
+                }
+            } else {
+                console.log('No notes found in local storage');
+            }
+            setIsLoaded(true);
+        };
+
+        loadNotes();
     }, []);
 
-    useEffect(() => {
-        // Save notes to local storage whenever they change
-        localStorage.setItem('notes', JSON.stringify(notes));
-    }, [notes]);
+    // Save notes to localStorage
+    const saveNotes = useCallback((notesToSave: Note[]) => {
+        console.log('Saving notes to localStorage:', notesToSave);
+        localStorage.setItem('notes', JSON.stringify(notesToSave));
+    }, []);
 
-    // ... existing code ...
+    // Update notes and save to localStorage
+    const updateNotes = useCallback((newNotes: Note[]) => {
+        setNotes(newNotes);
+        saveNotes(newNotes);
+    }, [saveNotes]);
 
-    const handleCreateNote = () => {
+    const handleCreateNote = useCallback(() => {
         const newNote: Note = {
             id: Date.now().toString(),
             title: 'New Note',
             content: '',
         };
-        setNotes([...notes, newNote]);
+        updateNotes([...notes, newNote]);
         setSelectedNoteId(newNote.id);
-    };
+    }, [notes, updateNotes]);
 
-    const handleDeleteNote = (id: string) => {
-        setNotes(notes.filter(note => note.id !== id));
+    const handleDeleteNote = useCallback((id: string) => {
+        const updatedNotes = notes.filter(note => note.id !== id);
+        updateNotes(updatedNotes);
         if (selectedNoteId === id) {
             setSelectedNoteId(null);
         }
-    };
+    }, [notes, selectedNoteId, updateNotes]);
 
-    const handleUpdateNote = (updatedNote: Note) => {
-        setNotes(notes.map(note => note.id === updatedNote.id ? updatedNote : note));
-    };
+    const handleUpdateNote = useCallback((updatedNote: Note) => {
+        const updatedNotes = notes.map(note => 
+            note.id === updatedNote.id ? updatedNote : note
+        );
+        updateNotes(updatedNotes);
+    }, [notes, updateNotes]);
 
     const handleExportNotes = () => {
-        const dataStr = JSON.stringify(notes);
-        const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+        const notesToExport = localStorage.getItem('notes') || '[]';
+        const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(notesToExport);
         const exportFileDefaultName = 'notes.json';
         const linkElement = document.createElement('a');
         linkElement.setAttribute('href', dataUri);
@@ -74,6 +98,7 @@ function App() {
                 try {
                     const importedNotes = JSON.parse(content);
                     setNotes(importedNotes);
+                    localStorage.setItem('notes', content);
                 } catch (error) {
                     console.error('Error importing notes:', error);
                 }
@@ -81,6 +106,10 @@ function App() {
             reader.readAsText(file);
         }
     };
+
+    if (!isLoaded) {
+        return <div>Loading...</div>;
+    }
 
     return (
         <div className='flex flex-col min-h-screen'>

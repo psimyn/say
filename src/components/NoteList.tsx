@@ -14,6 +14,11 @@ interface NoteListProps {
   onCreateNote: () => void;
 }
 
+const stripHtmlTags = (html: string) => {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  return doc.body.textContent || '';
+};
+
 const NoteList: React.FC<NoteListProps> = ({ notes, selectedNoteId, onSelectNote, onDeleteNote, onCreateNote }) => {
   return (
     <div className="note-list">
@@ -37,7 +42,7 @@ const NoteList: React.FC<NoteListProps> = ({ notes, selectedNoteId, onSelectNote
             >
               <div className="truncate">{note.title}</div>
               <div className="text-xs text-gray-500 truncate">
-                {note.content.slice(0, 50)}{note.content.length > 50 ? '...' : ''}
+                {stripHtmlTags(note.content).slice(0, 50)}{note.content.length > 50 ? '...' : ''}
               </div>
             </button>
             <button

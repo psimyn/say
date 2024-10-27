@@ -28,23 +28,20 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, onUpdateNote, transcriber
 
   const cleanText = (text: string) => {
     return text
-      // Replace multiple spaces with a single space
       .replace(/\s+/g, ' ')
-      // Ensure space after punctuation if not followed by a space
       .replace(/([.,!?])([^\s])/g, '$1 $2')
-      // Remove space before punctuation
       .replace(/\s+([.,!?])/g, '$1')
       .trim();
   };
 
   const handleTranscriptionUpdate = useCallback((newTranscript: string) => {
     if (newTranscript !== lastTranscriptRef.current) {
-      console.log('New transcript received:', newTranscript); // Debug log
+      console.log('New transcript received:', newTranscript);
       setContent(prevContent => {
         const newContent = newTranscript.slice(lastTranscriptRef.current.length);
         const cleanedContent = cleanText(newContent);
         const updatedContent = prevContent + (prevContent ? ' ' : '') + cleanedContent;
-        console.log('Updated content:', updatedContent); // Debug log
+        console.log('Updated content:', updatedContent);
         onUpdateNote({ ...note, content: updatedContent });
         lastTranscriptRef.current = newTranscript;
         return updatedContent;
@@ -53,7 +50,6 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, onUpdateNote, transcriber
   }, [note, onUpdateNote]);
 
   useEffect(() => {
-    console.log('Transcriber output changed:', transcriber.output); // Debug log
     if (transcriber.output && transcriber.output.text) {
       handleTranscriptionUpdate(transcriber.output.text);
     }
@@ -71,7 +67,6 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, onUpdateNote, transcriber
 
   const handleCopyToClipboard = () => {
     navigator.clipboard.writeText(content).then(() => {
-      // Optional: Add a visual feedback that the text was copied
       const button = document.getElementById('copyButton');
       if (button) {
         const originalText = button.textContent;
@@ -83,15 +78,29 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, onUpdateNote, transcriber
     });
   };
 
+  const getWordCount = (text: string) => {
+    return text.trim().split(/\s+/).filter(word => word.length > 0).length;
+  };
+
+  const getCharacterCount = (text: string) => {
+    return text.length;
+  };
+
   return (
     <div className="note-editor">
-      <input
-        type="text"
-        value={title}
-        onChange={handleTitleChange}
-        className="text-2xl font-bold mb-4 w-full p-2 border rounded"
-        placeholder="Note Title"
-      />
+      <div className="flex justify-between items-center mb-4">
+        <input
+          type="text"
+          value={title}
+          onChange={handleTitleChange}
+          className="text-2xl font-bold w-2/3 p-2 border rounded"
+          placeholder="Note Title"
+        />
+        <div className="text-sm text-gray-500 space-y-1">
+          <div>Words: {getWordCount(content)}</div>
+          <div>Characters: {getCharacterCount(content)}</div>
+        </div>
+      </div>
       <textarea
         value={content}
         onChange={handleContentChange}
@@ -101,7 +110,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, onUpdateNote, transcriber
       <button
         id="copyButton"
         onClick={handleCopyToClipboard}
-        className="px-4 py-2 rounded bg-gray-500 text-white hover:bg-gray-600 mb-4"
+        className="px-4 py-2 rounded bg-gray-500 text-white hover:bg-gray-600 mb-4 transition-colors"
       >
         Copy Note
       </button>

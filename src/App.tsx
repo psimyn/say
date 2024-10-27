@@ -17,9 +17,6 @@ interface Note {
   versions: NoteVersion[];
 }
 
-// Check if running in Chrome extension context
-const isExtension = typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage;
-
 function App() {
     const transcriber = useTranscriber();
     const [notes, setNotes] = useState<Note[]>([]);
@@ -50,19 +47,14 @@ function App() {
 
         loadNotes();
 
-        // Only set up Chrome extension specific listeners if in extension context
-        if (isExtension) {
-            window.addEventListener('message', (event) => {
-                if (event.data.type === 'MICROPHONE_PERMISSION_GRANTED') {
-                    setHasMicrophonePermission(true);
-                }
+        // Check for microphone permission
+        navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(() => {
+                setHasMicrophonePermission(true);
+            })
+            .catch(() => {
+                setHasMicrophonePermission(false);
             });
-
-            chrome.runtime.sendMessage({ type: 'REQUEST_MICROPHONE_PERMISSION' });
-        } else {
-            // In browser context, assume microphone permission will be handled by browser
-            setHasMicrophonePermission(true);
-        }
     }, []);
 
     const saveNotes = useCallback((notesToSave: Note[]) => {
@@ -84,6 +76,35 @@ function App() {
         };
         updateNotes([...notes, newNote]);
         setSelectedNoteId(newNote.id);
+    }, [notes, updateNotes]);
+
+    const startDictating = useCallback(() => {
+        // Create a new note
+        const newNote: Note = {
+            id: Date.now().toString(),
+            title: 'New Dictation',
+            content: '',
+            tags: [],
+            versions: []
+        };
+        updateNotes([...notes, newNote]);
+        setSelectedNoteId(newNote.id);
+
+        // Wait a bit for the note editor to mount
+        setTimeout(() => {
+            // Find and click the Record tile button
+            const recordTile = document.querySelector('button:has(.h-7 svg path[d*="M12 18.75"])') as HTMLButtonElement;
+            if (recordTile) {
+                recordTile.click();
+                // Wait for the modal to appear and click Start Recording
+                setTimeout(() => {
+                    const startRecordingButton = document.querySelector('button.bg-blue-500.hover\\:bg-blue-600') as HTMLButtonElement;
+                    if (startRecordingButton) {
+                        startRecordingButton.click();
+                    }
+                }, 100);
+            }
+        }, 100);
     }, [notes, updateNotes]);
 
     const handleDeleteNote = useCallback((id: string) => {
@@ -240,8 +261,32 @@ function App() {
                             hasMicrophonePermission={hasMicrophonePermission}
                         />
                     ) : (
-                        <div className='text-center text-gray-500'>
-                            Select a note or create a new one to get started.
+                        <div className="text-center space-y-8">
+                            <div className="text-gray-500 mb-8">
+                                Select a note or create a new one to get started.
+                            </div>
+                            <div className="flex flex-col items-center gap-4">
+                                <button
+                                    onClick={handleCreateNote}
+                                    className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors w-64"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                    </svg>
+                                    Create New Note
+                                </button>
+                                {hasMicrophonePermission && (
+                                    <button
+                                        onClick={startDictating}
+                                        className="flex items-center justify-center gap-2 px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors w-64"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                                        </svg>
+                                        Start Dictating
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     )}
                 </section>

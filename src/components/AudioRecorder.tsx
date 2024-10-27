@@ -1,147 +1,71 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useRef } from 'react';
 
-import { formatAudioTimestamp } from "../utils/AudioUtils";
-import { webmFixDuration } from "../utils/BlobFix";
+interface Props {
+  onRecordingComplete: (blob: Blob) => void;
+}
 
-function getMimeType() {
-    const types = [
-        "audio/webm",
-        "audio/mp4",
-        "audio/ogg",
-        "audio/wav",
-        "audio/aac",
-    ];
-    for (let i = 0; i < types.length; i++) {
-        if (MediaRecorder.isTypeSupported(types[i])) {
-            return types[i];
-        }
+const AudioRecorder: React.FC<Props> = ({ onRecordingComplete }) => {
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const mediaRecorder = useRef<MediaRecorder | null>(null);
+  const timeInterval = useRef<number | null>(null);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder.current = new MediaRecorder(stream);
+      mediaRecorder.current.addEventListener('dataavailable', handleDataAvailable);
+      mediaRecorder.current.start();
+      setIsRecording(true);
+      timeInterval.current = window.setInterval(() => {
+        setRecordingTime((prevTime) => prevTime + 1);
+      }, 1000);
+    } catch (err) {
+      console.error('Error accessing microphone:', err);
     }
-    return undefined;
-}
+  };
 
-export default function AudioRecorder(props: {
-    onRecordingComplete: (blob: Blob) => void;
-}) {
-    const [recording, setRecording] = useState(false);
-    const [duration, setDuration] = useState(0);
-    const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
+  const stopRecording = () => {
+    if (mediaRecorder.current && isRecording) {
+      mediaRecorder.current.stop();
+      mediaRecorder.current.stream.getTracks().forEach(track => track.stop());
+      setIsRecording(false);
+      if (timeInterval.current) {
+        clearInterval(timeInterval.current);
+        timeInterval.current = null;
+      }
+      setRecordingTime(0);
+    }
+  };
 
-    const streamRef = useRef<MediaStream | null>(null);
-    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-    const chunksRef = useRef<Blob[]>([]);
+  const handleDataAvailable = (event: BlobEvent) => {
+    if (event.data.size > 0) {
+      onRecordingComplete(event.data);
+    }
+  };
 
-    const audioRef = useRef<HTMLAudioElement | null>(null);
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
-    const startRecording = async () => {
-        // Reset recording (if any)
-        setRecordedBlob(null);
+  return (
+    <div className="flex flex-col items-center gap-4 p-4">
+      <div className="text-xl font-semibold">
+        {isRecording ? `Recording: ${formatTime(recordingTime)}` : 'Ready to Record'}
+      </div>
+      <button
+        onClick={isRecording ? stopRecording : startRecording}
+        className={`px-4 py-2 rounded-lg text-white ${
+          isRecording ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-500 hover:bg-blue-600'
+        } transition-colors`}
+        aria-label={isRecording ? "Stop Recording" : "Start Recording"}
+      >
+        {isRecording ? 'Stop Recording' : 'Start Recording'}
+      </button>
+    </div>
+  );
+};
 
-        let startTime = Date.now();
-
-        try {
-            if (!streamRef.current) {
-                streamRef.current = await navigator.mediaDevices.getUserMedia({
-                    audio: true,
-                });
-            }
-
-            const mimeType = getMimeType();
-            const mediaRecorder = new MediaRecorder(streamRef.current, {
-                mimeType,
-            });
-
-            mediaRecorderRef.current = mediaRecorder;
-
-            mediaRecorder.addEventListener("dataavailable", async (event) => {
-                if (event.data.size > 0) {
-                    chunksRef.current.push(event.data);
-                }
-                if (mediaRecorder.state === "inactive") {
-                    const duration = Date.now() - startTime;
-
-                    // Received a stop event
-                    let blob = new Blob(chunksRef.current, { type: mimeType });
-
-                    if (mimeType === "audio/webm") {
-                        blob = await webmFixDuration(blob, duration, blob.type);
-                    }
-
-                    setRecordedBlob(blob);
-                    props.onRecordingComplete(blob);
-
-                    chunksRef.current = [];
-                }
-            });
-            mediaRecorder.start();
-            setRecording(true);
-        } catch (error) {
-            console.error("Error accessing microphone:", error);
-        }
-    };
-
-    const stopRecording = () => {
-        if (
-            mediaRecorderRef.current &&
-            mediaRecorderRef.current.state === "recording"
-        ) {
-            mediaRecorderRef.current.stop(); // set state to inactive
-            setDuration(0);
-            setRecording(false);
-        }
-    };
-
-    useEffect(() => {
-        let stream: MediaStream | null = null;
-
-        if (recording) {
-            const timer = setInterval(() => {
-                setDuration((prevDuration) => prevDuration + 1);
-            }, 1000);
-
-            return () => {
-                clearInterval(timer);
-            };
-        }
-
-        return () => {
-            if (stream) {
-                stream.getTracks().forEach((track) => track.stop());
-            }
-        };
-    }, [recording]);
-
-    const handleToggleRecording = () => {
-        if (recording) {
-            stopRecording();
-        } else {
-            startRecording();
-        }
-    };
-
-    return (
-        <div className='flex flex-col justify-center items-center'>
-            <button
-                type='button'
-                className={`m-2 inline-flex justify-center rounded-md border border-transparent px-4 py-2 text-sm font-medium text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 transition-all duration-200 ${
-                    recording
-                        ? "bg-red-500 hover:bg-red-600"
-                        : "bg-green-500 hover:bg-green-600"
-                }`}
-                onClick={handleToggleRecording}
-            >
-                {recording
-                    ? `Stop Recording (${formatAudioTimestamp(duration)})`
-                    : "Start Recording"}
-            </button>
-
-            {recordedBlob && (
-                <audio className='w-full' ref={audioRef} controls>
-                    <source
-                        src={URL.createObjectURL(recordedBlob)}
-                        type={recordedBlob.type}
-                    />
-                </audio>
-            )}
-        </div>
-    );
-}
+export default AudioRecorder;

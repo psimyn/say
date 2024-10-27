@@ -17,6 +17,9 @@ interface Note {
   versions: NoteVersion[];
 }
 
+// Check if running in Chrome extension context
+const isExtension = typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage;
+
 function App() {
     const transcriber = useTranscriber();
     const [notes, setNotes] = useState<Note[]>([]);
@@ -47,14 +50,18 @@ function App() {
 
         loadNotes();
 
-        window.addEventListener('message', (event) => {
-            if (event.data.type === 'MICROPHONE_PERMISSION_GRANTED') {
-                setHasMicrophonePermission(true);
-            }
-        });
+        // Only set up Chrome extension specific listeners if in extension context
+        if (isExtension) {
+            window.addEventListener('message', (event) => {
+                if (event.data.type === 'MICROPHONE_PERMISSION_GRANTED') {
+                    setHasMicrophonePermission(true);
+                }
+            });
 
-        if (chrome.runtime && chrome.runtime.sendMessage) {
             chrome.runtime.sendMessage({ type: 'REQUEST_MICROPHONE_PERMISSION' });
+        } else {
+            // In browser context, assume microphone permission will be handled by browser
+            setHasMicrophonePermission(true);
         }
     }, []);
 

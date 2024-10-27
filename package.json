@@ -14,6 +14,7 @@
     "tsc": "tsc"
   },
   "dependencies": {
+    "@esbuild/darwin-arm64": "^0.24.0",
     "@headlessui/react": "^1.7.13",
     "@xenova/transformers": "^2.7.0",
     "axios": "^1.3.4",

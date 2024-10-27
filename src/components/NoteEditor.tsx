@@ -19,7 +19,6 @@ interface NoteEditorProps {
 const NoteEditor: React.FC<NoteEditorProps> = ({ note, onUpdateNote, transcriber, hasMicrophonePermission }) => {
   const [title, setTitle] = useState(note.title);
   const [content, setContent] = useState(note.content);
-  const [isRecording, setIsRecording] = useState(false);
   const lastTranscriptRef = useRef('');
 
   useEffect(() => {
@@ -57,20 +56,18 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, onUpdateNote, transcriber
     onUpdateNote({ ...note, content: e.target.value });
   };
 
-  const toggleRecording = () => {
-    if (!hasMicrophonePermission) {
-      console.log('Microphone permission not granted');
-      return;
-    }
-    setIsRecording(!isRecording);
-    if (!isRecording) {
-      console.log('Starting recording'); // Debug log
-      lastTranscriptRef.current = ''; // Reset the last transcript
-      transcriber.start(undefined); // You might need to pass the correct AudioBuffer here
-    } else {
-      console.log('Stopping recording'); // Debug log
-      // There's no stop method in the Transcriber interface, so you might need to handle this differently
-    }
+  const handleCopyToClipboard = () => {
+    navigator.clipboard.writeText(content).then(() => {
+      // Optional: Add a visual feedback that the text was copied
+      const button = document.getElementById('copyButton');
+      if (button) {
+        const originalText = button.textContent;
+        button.textContent = 'Copied!';
+        setTimeout(() => {
+          button.textContent = originalText;
+        }, 2000);
+      }
+    });
   };
 
   return (
@@ -88,23 +85,17 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, onUpdateNote, transcriber
         className="w-full h-64 p-2 border rounded mb-4"
         placeholder="Note Content"
       />
-      <div className="flex items-center mb-4">
-        {hasMicrophonePermission ? (
-          <button
-            onClick={toggleRecording}
-            className={`px-4 py-2 rounded ${
-              isRecording ? 'bg-red-500 text-white' : 'bg-blue-500 text-white'
-            }`}
-          >
-            {isRecording ? 'Stop Recording' : 'Start Recording'}
-          </button>
-        ) : (
-          <p className="text-red-500">Microphone permission is required for recording.</p>
-        )}
-        {isRecording && <span className="ml-2 text-red-500">Recording...</span>}
+      <button
+        id="copyButton"
+        onClick={handleCopyToClipboard}
+        className="px-4 py-2 rounded bg-gray-500 text-white hover:bg-gray-600 mb-4"
+      >
+        Copy Note
+      </button>
+      <div className="w-full flex flex-col my-2 p-4 max-h-[20rem] overflow-y-auto">
+        <AudioManager transcriber={transcriber} />
+        <Transcript transcript={transcriber.output?.text || ''} />
       </div>
-      <AudioManager transcriber={transcriber} />
-      <Transcript transcript={transcriber.output?.text || ''} />
     </div>
   );
 };

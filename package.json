@@ -19,7 +19,8 @@
     "@xenova/transformers": "^2.7.0",
     "axios": "^1.3.4",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "react-icons": "^4.11.0"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.279",

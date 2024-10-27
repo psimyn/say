@@ -1,8 +1,12 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Editor } from '@tinymce/tinymce-react';
+import { IoCopyOutline } from 'react-icons/io5';
+import { AiOutlineRobot } from 'react-icons/ai';
 import { AudioManager } from "./AudioManager";
 import Transcript from "./Transcript";
 import { Transcriber } from "../hooks/useTranscriber";
+import { useSummarizer } from '../hooks/useSummarizer';
+import { TextSummary } from './TextSummary';
 
 interface NoteVersion {
   content: string;
@@ -28,7 +32,7 @@ interface NoteEditorProps {
   hasMicrophonePermission: boolean;
 }
 
-const NoteEditor: React.FC<NoteEditorProps> = ({ 
+export const NoteEditor: React.FC<NoteEditorProps> = ({ 
   note, 
   onUpdateNote, 
   onSaveVersion,
@@ -44,6 +48,15 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
   const [versionDescription, setVersionDescription] = useState('');
   const lastTranscriptRef = useRef('');
   const editorRef = useRef<any>(null);
+  const {
+    isLoading,
+    progress,
+    summary,
+    model,
+    summarize,
+    clearSummary,
+    changeModel,
+  } = useSummarizer();
 
   useEffect(() => {
     setTitle(note.title);
@@ -90,6 +103,15 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
   const handleEditorChange = (content: string) => {
     setContent(content);
     onUpdateNote({ ...note, content });
+  };
+
+  const handleSummarize = async () => {
+    if (editorRef.current) {
+      const textContent = editorRef.current.getContent({ format: 'text' });
+      if (textContent.trim()) {
+        await summarize(textContent);
+      }
+    }
   };
 
   const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -229,12 +251,30 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
         }}
       />
 
+      <TextSummary
+        summary={summary}
+        isLoading={isLoading}
+        progress={progress}
+        onClose={clearSummary}
+        model={model}
+        onModelChange={changeModel}
+      />
+
       <div className="flex gap-2 mt-4 mb-4">
+        <button
+          onClick={handleSummarize}
+          disabled={isLoading}
+          className="flex items-center gap-2 px-4 py-2 rounded bg-blue-500 text-white hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <AiOutlineRobot className="w-5 h-5" />
+          AI Summary
+        </button>
         <button
           id="copyButton"
           onClick={handleCopyToClipboard}
-          className="px-4 py-2 rounded bg-gray-500 text-white hover:bg-gray-600 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 rounded bg-gray-500 text-white hover:bg-gray-600 transition-colors"
         >
+          <IoCopyOutline className="w-5 h-5" />
           Copy Note
         </button>
         <button

@@ -1,19 +1,26 @@
-export default function Progress({
-    text,
-    percentage,
-}: {
-    text: string;
-    percentage: number;
-}) {
-    percentage = percentage ?? 0;
-    return (
-        <div className='mt-0.5 w-full relative text-sm text-white background-bg-cyan-400 bg-gray-200 border-1 border-gray-400 rounded-lg text-left overflow-hidden'>
-            <div
-                className='top-0 h-full bg-blue-500 whitespace-nowrap px-2'
-                style={{ width: `${percentage}%` }}
-            >
-                {text} ({`${percentage.toFixed(2)}%`})
-            </div>
-        </div>
-    );
+import React from 'react';
+
+interface ProgressProps {
+  progress: {
+    status: string;
+    progress?: number;
+  };
 }
+
+export const Progress: React.FC<ProgressProps> = ({ progress }) => {
+  return (
+    <div className="w-full">
+      <div className="text-sm text-gray-600 mb-1">{progress.status}</div>
+      {progress.progress !== undefined && (
+        <div className="w-full bg-gray-200 rounded-full h-2.5">
+          <div
+            className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+            style={{ width: `${Math.round(progress.progress * 100)}%` }}
+          />
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Progress;

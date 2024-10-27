@@ -26,11 +26,24 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, onUpdateNote, transcriber
     setContent(note.content);
   }, [note]);
 
+  const cleanText = (text: string) => {
+    return text
+      // Replace multiple spaces with a single space
+      .replace(/\s+/g, ' ')
+      // Ensure space after punctuation if not followed by a space
+      .replace(/([.,!?])([^\s])/g, '$1 $2')
+      // Remove space before punctuation
+      .replace(/\s+([.,!?])/g, '$1')
+      .trim();
+  };
+
   const handleTranscriptionUpdate = useCallback((newTranscript: string) => {
     if (newTranscript !== lastTranscriptRef.current) {
       console.log('New transcript received:', newTranscript); // Debug log
       setContent(prevContent => {
-        const updatedContent = prevContent + ' ' + newTranscript.slice(lastTranscriptRef.current.length);
+        const newContent = newTranscript.slice(lastTranscriptRef.current.length);
+        const cleanedContent = cleanText(newContent);
+        const updatedContent = prevContent + (prevContent ? ' ' : '') + cleanedContent;
         console.log('Updated content:', updatedContent); // Debug log
         onUpdateNote({ ...note, content: updatedContent });
         lastTranscriptRef.current = newTranscript;

@@ -1,6 +1,6 @@
 import React from 'react';
 import { IoClose, IoSettingsSharp } from 'react-icons/io5';
-import { Progress } from './Progress';
+import Progress from './Progress';
 
 interface TextSummaryProps {
   summary: string | null;

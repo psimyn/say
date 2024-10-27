@@ -4,22 +4,44 @@ import { AudioManager } from "./AudioManager";
 import Transcript from "./Transcript";
 import { Transcriber } from "../hooks/useTranscriber";
 
+interface NoteVersion {
+  content: string;
+  timestamp: number;
+  description: string;
+}
+
 interface Note {
   id: string;
   title: string;
   content: string;
+  tags: string[];
+  versions: NoteVersion[];
 }
 
 interface NoteEditorProps {
   note: Note;
   onUpdateNote: (updatedNote: Note) => void;
+  onSaveVersion: (noteId: string, description: string) => void;
+  onRestoreVersion: (noteId: string, version: NoteVersion) => void;
+  onUpdateTags: (noteId: string, tags: string[]) => void;
   transcriber: Transcriber;
   hasMicrophonePermission: boolean;
 }
 
-const NoteEditor: React.FC<NoteEditorProps> = ({ note, onUpdateNote, transcriber, hasMicrophonePermission }) => {
+const NoteEditor: React.FC<NoteEditorProps> = ({ 
+  note, 
+  onUpdateNote, 
+  onSaveVersion,
+  onRestoreVersion,
+  onUpdateTags,
+  transcriber, 
+  hasMicrophonePermission 
+}) => {
   const [title, setTitle] = useState(note.title);
   const [content, setContent] = useState(note.content);
+  const [tagInput, setTagInput] = useState('');
+  const [showVersionModal, setShowVersionModal] = useState(false);
+  const [versionDescription, setVersionDescription] = useState('');
   const lastTranscriptRef = useRef('');
   const editorRef = useRef<any>(null);
 
@@ -42,7 +64,6 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, onUpdateNote, transcriber
       const newContent = newTranscript.slice(lastTranscriptRef.current.length);
       const cleanedContent = cleanText(newContent);
       
-      // Insert the new content at the cursor position or at the end
       if (editorRef.current) {
         const editor = editorRef.current;
         editor.execCommand('mceInsertContent', false, ' ' + cleanedContent);
@@ -71,14 +92,35 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, onUpdateNote, transcriber
     onUpdateNote({ ...note, content });
   };
 
+  const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && tagInput.trim()) {
+      const newTag = tagInput.trim();
+      if (!note.tags.includes(newTag)) {
+        const newTags = [...note.tags, newTag];
+        onUpdateTags(note.id, newTags);
+        setTagInput('');
+      }
+    }
+  };
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    const newTags = note.tags.filter(tag => tag !== tagToRemove);
+    onUpdateTags(note.id, newTags);
+  };
+
+  const handleSaveVersion = () => {
+    if (versionDescription.trim()) {
+      onSaveVersion(note.id, versionDescription.trim());
+      setVersionDescription('');
+      setShowVersionModal(false);
+    }
+  };
+
   const handleCopyToClipboard = () => {
     if (editorRef.current) {
-      // Get the HTML content
       const htmlContent = editorRef.current.getContent();
-      // Get the text content
       const textContent = editorRef.current.getContent({format: 'text'});
       
-      // Try to copy rich text first, fall back to plain text
       try {
         const clipboardData = new ClipboardItem({
           'text/html': new Blob([htmlContent], { type: 'text/html' }),
@@ -95,7 +137,6 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, onUpdateNote, transcriber
           }
         });
       } catch (err) {
-        // Fallback to plain text
         navigator.clipboard.writeText(textContent).then(() => {
           const button = document.getElementById('copyButton');
           if (button) {
@@ -111,13 +152,17 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, onUpdateNote, transcriber
   };
 
   const getWordCount = (text: string) => {
-    const strippedText = text.replace(/<[^>]*>/g, ' '); // Remove HTML tags
+    const strippedText = text.replace(/<[^>]*>/g, ' ');
     return strippedText.trim().split(/\s+/).filter(word => word.length > 0).length;
   };
 
   const getCharacterCount = (text: string) => {
-    const strippedText = text.replace(/<[^>]*>/g, ''); // Remove HTML tags
+    const strippedText = text.replace(/<[^>]*>/g, '');
     return strippedText.length;
+  };
+
+  const formatDate = (timestamp: number) => {
+    return new Date(timestamp).toLocaleString();
   };
 
   return (
@@ -135,6 +180,30 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, onUpdateNote, transcriber
           <div>Characters: {getCharacterCount(content)}</div>
         </div>
       </div>
+
+      <div className="mb-4">
+        <div className="flex flex-wrap gap-2 mb-2">
+          {note.tags.map(tag => (
+            <span key={tag} className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm flex items-center">
+              {tag}
+              <button
+                onClick={() => handleRemoveTag(tag)}
+                className="ml-1 text-blue-600 hover:text-blue-800"
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+        <input
+          type="text"
+          value={tagInput}
+          onChange={(e) => setTagInput(e.target.value)}
+          onKeyPress={handleAddTag}
+          placeholder="Add tags (press Enter)"
+          className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        />
+      </div>
       
       <Editor
         apiKey='hs3cwcc85xer8s856zt0id82ropre2dgte3zc2p9gn82978o'
@@ -147,11 +216,12 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, onUpdateNote, transcriber
           plugins: [
             'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
             'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-            'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
+            'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount',
+            'checklist'
           ],
           toolbar: 'undo redo | blocks | ' +
             'bold italic forecolor | alignleft aligncenter ' +
-            'alignright alignjustify | bullist numlist outdent indent | ' +
+            'alignright alignjustify | bullist numlist checklist outdent indent | ' +
             'removeformat | help',
           content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 14px }',
           skin: 'oxide',
@@ -159,18 +229,77 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, onUpdateNote, transcriber
         }}
       />
 
-      <button
-        id="copyButton"
-        onClick={handleCopyToClipboard}
-        className="px-4 py-2 rounded bg-gray-500 text-white hover:bg-gray-600 transition-colors mt-4 mb-4"
-      >
-        Copy Note
-      </button>
+      <div className="flex gap-2 mt-4 mb-4">
+        <button
+          id="copyButton"
+          onClick={handleCopyToClipboard}
+          className="px-4 py-2 rounded bg-gray-500 text-white hover:bg-gray-600 transition-colors"
+        >
+          Copy Note
+        </button>
+        <button
+          onClick={() => setShowVersionModal(true)}
+          className="px-4 py-2 rounded bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+        >
+          Save Version
+        </button>
+      </div>
+
+      {showVersionModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-lg font-semibold mb-4">Save Version</h3>
+            <input
+              type="text"
+              value={versionDescription}
+              onChange={(e) => setVersionDescription(e.target.value)}
+              placeholder="Version description"
+              className="w-full px-3 py-2 border rounded mb-4"
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowVersionModal(false)}
+                className="px-4 py-2 rounded bg-gray-500 text-white hover:bg-gray-600 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveVersion}
+                className="px-4 py-2 rounded bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="w-full flex flex-col my-2 p-4 max-h-[20rem] overflow-y-auto">
         <AudioManager transcriber={transcriber} />
         <Transcript transcript={transcriber.output?.text || ''} />
       </div>
+
+      {note.versions.length > 0 && (
+        <div className="mt-8 border-t pt-4">
+          <h3 className="text-lg font-semibold mb-4">Version History</h3>
+          <div className="space-y-2">
+            {note.versions.map((version, index) => (
+              <div key={version.timestamp} className="flex items-center justify-between bg-gray-50 p-3 rounded">
+                <div>
+                  <div className="font-medium">{version.description}</div>
+                  <div className="text-sm text-gray-500">{formatDate(version.timestamp)}</div>
+                </div>
+                <button
+                  onClick={() => onRestoreVersion(note.id, version)}
+                  className="px-3 py-1 rounded bg-blue-500 text-white hover:bg-blue-600 transition-colors text-sm"
+                >
+                  Restore
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

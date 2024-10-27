@@ -4,6 +4,7 @@ interface Note {
   id: string;
   title: string;
   content: string;
+  tags: string[];
 }
 
 interface NoteListProps {
@@ -12,6 +13,8 @@ interface NoteListProps {
   onSelectNote: (id: string) => void;
   onDeleteNote: (id: string) => void;
   onCreateNote: () => void;
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
 }
 
 const stripHtmlTags = (html: string) => {
@@ -19,7 +22,15 @@ const stripHtmlTags = (html: string) => {
   return doc.body.textContent || '';
 };
 
-const NoteList: React.FC<NoteListProps> = ({ notes, selectedNoteId, onSelectNote, onDeleteNote, onCreateNote }) => {
+const NoteList: React.FC<NoteListProps> = ({ 
+  notes, 
+  selectedNoteId, 
+  onSelectNote, 
+  onDeleteNote, 
+  onCreateNote,
+  searchQuery,
+  onSearchChange
+}) => {
   return (
     <div className="note-list">
       <h2 className="text-xl font-bold mb-4">Notes</h2>
@@ -29,6 +40,17 @@ const NoteList: React.FC<NoteListProps> = ({ notes, selectedNoteId, onSelectNote
       >
         Create New Note
       </button>
+
+      <div className="mb-4">
+        <input
+          type="text"
+          placeholder="Search notes and tags..."
+          value={searchQuery}
+          onChange={(e) => onSearchChange(e.target.value)}
+          className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        />
+      </div>
+
       <ul className="space-y-1">
         {notes.map((note) => (
           <li key={note.id} className="flex items-center justify-between group">
@@ -41,6 +63,15 @@ const NoteList: React.FC<NoteListProps> = ({ notes, selectedNoteId, onSelectNote
               } w-full`}
             >
               <div className="truncate">{note.title}</div>
+              {note.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1 my-1">
+                  {note.tags.map(tag => (
+                    <span key={tag} className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
               <div className="text-xs text-gray-500 truncate">
                 {stripHtmlTags(note.content).slice(0, 50)}{note.content.length > 50 ? '...' : ''}
               </div>

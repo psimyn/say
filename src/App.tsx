@@ -3,10 +3,18 @@ import NoteList from './components/NoteList';
 import NoteEditor from './components/NoteEditor';
 import { useTranscriber } from "./hooks/useTranscriber";
 
+interface NoteVersion {
+  content: string;
+  timestamp: number;
+  description: string;
+}
+
 interface Note {
   id: string;
   title: string;
   content: string;
+  tags: string[];
+  versions: NoteVersion[];
 }
 
 function App() {
@@ -15,6 +23,7 @@ function App() {
     const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
     const [isLoaded, setIsLoaded] = useState(false);
     const [hasMicrophonePermission, setHasMicrophonePermission] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
         const loadNotes = () => {
@@ -22,7 +31,13 @@ function App() {
             if (storedNotes) {
                 try {
                     const parsedNotes = JSON.parse(storedNotes);
-                    setNotes(parsedNotes);
+                    // Migrate old notes to new format if needed
+                    const migratedNotes = parsedNotes.map((note: any) => ({
+                        ...note,
+                        tags: note.tags || [],
+                        versions: note.versions || []
+                    }));
+                    setNotes(migratedNotes);
                 } catch (error) {
                     console.error('Error parsing stored notes:', error);
                 }
@@ -57,6 +72,8 @@ function App() {
             id: Date.now().toString(),
             title: 'New Note',
             content: '',
+            tags: [],
+            versions: []
         };
         updateNotes([...notes, newNote]);
         setSelectedNoteId(newNote.id);
@@ -76,6 +93,53 @@ function App() {
         );
         updateNotes(updatedNotes);
     }, [notes, updateNotes]);
+
+    const handleSaveVersion = useCallback((noteId: string, description: string) => {
+        const note = notes.find(n => n.id === noteId);
+        if (note) {
+            const newVersion: NoteVersion = {
+                content: note.content,
+                timestamp: Date.now(),
+                description
+            };
+            const updatedNote = {
+                ...note,
+                versions: [...note.versions, newVersion]
+            };
+            handleUpdateNote(updatedNote);
+        }
+    }, [notes, handleUpdateNote]);
+
+    const handleRestoreVersion = useCallback((noteId: string, version: NoteVersion) => {
+        const note = notes.find(n => n.id === noteId);
+        if (note) {
+            const updatedNote = {
+                ...note,
+                content: version.content
+            };
+            handleUpdateNote(updatedNote);
+        }
+    }, [notes, handleUpdateNote]);
+
+    const handleUpdateTags = useCallback((noteId: string, tags: string[]) => {
+        const note = notes.find(n => n.id === noteId);
+        if (note) {
+            const updatedNote = {
+                ...note,
+                tags
+            };
+            handleUpdateNote(updatedNote);
+        }
+    }, [notes, handleUpdateNote]);
+
+    const filteredNotes = notes.filter(note => {
+        const searchLower = searchQuery.toLowerCase();
+        return (
+            note.title.toLowerCase().includes(searchLower) ||
+            note.content.toLowerCase().includes(searchLower) ||
+            note.tags.some(tag => tag.toLowerCase().includes(searchLower))
+        );
+    });
 
     if (!isLoaded) {
         return <div>Loading...</div>;
@@ -121,7 +185,13 @@ function App() {
                                                     'title' in note && 
                                                     'content' in note
                                                 )) {
-                                                    updateNotes(importedNotes);
+                                                    // Migrate imported notes if needed
+                                                    const migratedNotes = importedNotes.map(note => ({
+                                                        ...note,
+                                                        tags: note.tags || [],
+                                                        versions: note.versions || []
+                                                    }));
+                                                    updateNotes(migratedNotes);
                                                 } else {
                                                     alert('Invalid notes format');
                                                 }
@@ -142,11 +212,13 @@ function App() {
             <main className='flex-grow flex'>
                 <aside className='w-1/4 bg-slate-100 p-4'>
                     <NoteList
-                        notes={notes}
+                        notes={filteredNotes}
                         selectedNoteId={selectedNoteId}
                         onSelectNote={setSelectedNoteId}
                         onDeleteNote={handleDeleteNote}
                         onCreateNote={handleCreateNote}
+                        searchQuery={searchQuery}
+                        onSearchChange={setSearchQuery}
                     />
                 </aside>
                 <section className='w-3/4 p-4'>
@@ -154,6 +226,9 @@ function App() {
                         <NoteEditor
                             note={notes.find(note => note.id === selectedNoteId)!}
                             onUpdateNote={handleUpdateNote}
+                            onSaveVersion={handleSaveVersion}
+                            onRestoreVersion={handleRestoreVersion}
+                            onUpdateTags={handleUpdateTags}
                             transcriber={transcriber}
                             hasMicrophonePermission={hasMicrophonePermission}
                         />

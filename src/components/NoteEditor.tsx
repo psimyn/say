@@ -13,9 +13,10 @@ interface NoteEditorProps {
   note: Note;
   onUpdateNote: (updatedNote: Note) => void;
   transcriber: Transcriber;
+  hasMicrophonePermission: boolean;
 }
 
-const NoteEditor: React.FC<NoteEditorProps> = ({ note, onUpdateNote, transcriber }) => {
+const NoteEditor: React.FC<NoteEditorProps> = ({ note, onUpdateNote, transcriber, hasMicrophonePermission }) => {
   const [title, setTitle] = useState(note.title);
   const [content, setContent] = useState(note.content);
   const [isRecording, setIsRecording] = useState(false);
@@ -57,6 +58,10 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, onUpdateNote, transcriber
   };
 
   const toggleRecording = () => {
+    if (!hasMicrophonePermission) {
+      console.log('Microphone permission not granted');
+      return;
+    }
     setIsRecording(!isRecording);
     if (!isRecording) {
       console.log('Starting recording'); // Debug log
@@ -84,14 +89,18 @@ const NoteEditor: React.FC<NoteEditorProps> = ({ note, onUpdateNote, transcriber
         placeholder="Note Content"
       />
       <div className="flex items-center mb-4">
-        <button
-          onClick={toggleRecording}
-          className={`px-4 py-2 rounded ${
-            isRecording ? 'bg-red-500 text-white' : 'bg-blue-500 text-white'
-          }`}
-        >
-          {isRecording ? 'Stop Recording' : 'Start Recording'}
-        </button>
+        {hasMicrophonePermission ? (
+          <button
+            onClick={toggleRecording}
+            className={`px-4 py-2 rounded ${
+              isRecording ? 'bg-red-500 text-white' : 'bg-blue-500 text-white'
+            }`}
+          >
+            {isRecording ? 'Stop Recording' : 'Start Recording'}
+          </button>
+        ) : (
+          <p className="text-red-500">Microphone permission is required for recording.</p>
+        )}
         {isRecording && <span className="ml-2 text-red-500">Recording...</span>}
       </div>
       <AudioManager transcriber={transcriber} />

@@ -1,12 +1,7 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { AudioManager } from "./components/AudioManager";
-import Transcript from "./components/Transcript";
-import { useTranscriber } from "./hooks/useTranscriber";
-// ... existing imports ...
-
-// New components (to be created)
+import React, { useState, useEffect, useCallback } from 'react';
 import NoteList from './components/NoteList';
 import NoteEditor from './components/NoteEditor';
+import { useTranscriber } from "./hooks/useTranscriber";
 
 interface Note {
   id: string;
@@ -19,36 +14,41 @@ function App() {
     const [notes, setNotes] = useState<Note[]>([]);
     const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
     const [isLoaded, setIsLoaded] = useState(false);
+    const [hasMicrophonePermission, setHasMicrophonePermission] = useState(false);
 
-    // Load notes from localStorage
     useEffect(() => {
         const loadNotes = () => {
             const storedNotes = localStorage.getItem('notes');
-            console.log('Stored notes from localStorage:', storedNotes);
             if (storedNotes) {
                 try {
                     const parsedNotes = JSON.parse(storedNotes);
                     setNotes(parsedNotes);
-                    console.log('Loaded notes from local storage:', parsedNotes);
                 } catch (error) {
                     console.error('Error parsing stored notes:', error);
                 }
-            } else {
-                console.log('No notes found in local storage');
             }
             setIsLoaded(true);
         };
 
         loadNotes();
+
+        // Listen for messages from the content script
+        window.addEventListener('message', (event) => {
+            if (event.data.type === 'MICROPHONE_PERMISSION_GRANTED') {
+                setHasMicrophonePermission(true);
+            }
+        });
+
+        // Request microphone permission
+        if (chrome.runtime && chrome.runtime.sendMessage) {
+            chrome.runtime.sendMessage({ type: 'REQUEST_MICROPHONE_PERMISSION' });
+        }
     }, []);
 
-    // Save notes to localStorage
     const saveNotes = useCallback((notesToSave: Note[]) => {
-        console.log('Saving notes to localStorage:', notesToSave);
         localStorage.setItem('notes', JSON.stringify(notesToSave));
     }, []);
 
-    // Update notes and save to localStorage
     const updateNotes = useCallback((newNotes: Note[]) => {
         setNotes(newNotes);
         saveNotes(newNotes);
@@ -79,34 +79,6 @@ function App() {
         updateNotes(updatedNotes);
     }, [notes, updateNotes]);
 
-    const handleExportNotes = () => {
-        const notesToExport = localStorage.getItem('notes') || '[]';
-        const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(notesToExport);
-        const exportFileDefaultName = 'notes.json';
-        const linkElement = document.createElement('a');
-        linkElement.setAttribute('href', dataUri);
-        linkElement.setAttribute('download', exportFileDefaultName);
-        linkElement.click();
-    };
-
-    const handleImportNotes = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const content = e.target?.result as string;
-                try {
-                    const importedNotes = JSON.parse(content);
-                    setNotes(importedNotes);
-                    localStorage.setItem('notes', content);
-                } catch (error) {
-                    console.error('Error importing notes:', error);
-                }
-            };
-            reader.readAsText(file);
-        }
-    };
-
     if (!isLoaded) {
         return <div>Loading...</div>;
     }
@@ -124,21 +96,6 @@ function App() {
                         onDeleteNote={handleDeleteNote}
                         onCreateNote={handleCreateNote}
                     />
-                    <div className='mt-4'>
-                        <button onClick={handleExportNotes} className='bg-blue-500 text-white px-2 py-1 rounded mr-2'>
-                            Export Notes
-                        </button>
-                        <input
-                            type="file"
-                            onChange={handleImportNotes}
-                            accept=".json"
-                            className='hidden'
-                            id="import-notes"
-                        />
-                        <label htmlFor="import-notes" className='bg-green-500 text-white px-2 py-1 rounded cursor-pointer'>
-                            Import Notes
-                        </label>
-                    </div>
                 </aside>
                 <section className='w-3/4 p-4'>
                     {selectedNoteId ? (
@@ -146,6 +103,7 @@ function App() {
                             note={notes.find(note => note.id === selectedNoteId)!}
                             onUpdateNote={handleUpdateNote}
                             transcriber={transcriber}
+                            hasMicrophonePermission={hasMicrophonePermission}
                         />
                     ) : (
                         <div className='text-center text-gray-500'>
@@ -154,15 +112,6 @@ function App() {
                     )}
                 </section>
             </main>
-            <div className='absolute bottom-4'>
-                Made with{" "}
-                <a
-                    className='underline'
-                    href='https://github.com/xenova/transformers.js'
-                >
-                    🤗 Transformers.js
-                </a>
-            </div>
         </div>
     );
 }

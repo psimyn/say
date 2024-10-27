@@ -149,7 +149,7 @@ function App() {
         <div className='flex flex-col min-h-screen'>
             <header className='bg-slate-800 text-white p-4'>
                 <div className="flex justify-between items-center">
-                    <h1 className='text-3xl font-bold'>Whisper Notes</h1>
+                    <h1 className='text-3xl font-bold'>SpeakEZ</h1>
                     <div className="flex gap-2">
                         <button
                             onClick={() => {
@@ -157,7 +157,7 @@ function App() {
                                 const url = URL.createObjectURL(notesBlob);
                                 const a = document.createElement('a');
                                 a.href = url;
-                                a.download = 'whisper-notes-export.json';
+                                a.download = 'speakez-notes-export.json';
                                 document.body.appendChild(a);
                                 a.click();
                                 document.body.removeChild(a);

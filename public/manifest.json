@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Whisper Notes",
+  "name": "SpeakEZ",
   "version": "1.0",
   "description": "A note-taking app with speech-to-text capabilities",
   "icons": {
@@ -9,7 +9,7 @@
     "128": "icon128.png"
   },
   "action": {
-    "default_title": "Whisper Notes"
+    "default_title": "SpeakEZ"
   },
   "side_panel": {
     "default_path": "index.html"

@@ -61,7 +61,10 @@ export const TextSummary: React.FC<TextSummaryProps> = ({
 
       {isLoading && progress && (
         <div className="mb-4">
-          <Progress progress={progress} />
+          <Progress 
+            text={progress.status} 
+            percentage={progress.progress || 0} 
+          />
         </div>
       )}
 

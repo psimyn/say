@@ -22,7 +22,6 @@ function App() {
     const [notes, setNotes] = useState<Note[]>([]);
     const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
     const [isLoaded, setIsLoaded] = useState(false);
-    const [hasMicrophonePermission, setHasMicrophonePermission] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
@@ -46,15 +45,6 @@ function App() {
         };
 
         loadNotes();
-
-        // Check for microphone permission
-        navigator.mediaDevices.getUserMedia({ audio: true })
-            .then(() => {
-                setHasMicrophonePermission(true);
-            })
-            .catch(() => {
-                setHasMicrophonePermission(false);
-            });
     }, []);
 
     const saveNotes = useCallback((notesToSave: Note[]) => {
@@ -78,33 +68,41 @@ function App() {
         setSelectedNoteId(newNote.id);
     }, [notes, updateNotes]);
 
-    const startDictating = useCallback(() => {
-        // Create a new note
-        const newNote: Note = {
-            id: Date.now().toString(),
-            title: 'New Dictation',
-            content: '',
-            tags: [],
-            versions: []
-        };
-        updateNotes([...notes, newNote]);
-        setSelectedNoteId(newNote.id);
+    const startDictating = useCallback(async () => {
+        try {
+            // Request microphone permission
+            await navigator.mediaDevices.getUserMedia({ audio: true });
+            
+            // Create a new note
+            const newNote: Note = {
+                id: Date.now().toString(),
+                title: 'New Dictation',
+                content: '',
+                tags: [],
+                versions: []
+            };
+            updateNotes([...notes, newNote]);
+            setSelectedNoteId(newNote.id);
 
-        // Wait a bit for the note editor to mount
-        setTimeout(() => {
-            // Find and click the Record tile button
-            const recordTile = document.querySelector('button:has(.h-7 svg path[d*="M12 18.75"])') as HTMLButtonElement;
-            if (recordTile) {
-                recordTile.click();
-                // Wait for the modal to appear and click Start Recording
-                setTimeout(() => {
-                    const startRecordingButton = document.querySelector('button.bg-blue-500.hover\\:bg-blue-600') as HTMLButtonElement;
-                    if (startRecordingButton) {
-                        startRecordingButton.click();
-                    }
-                }, 100);
-            }
-        }, 100);
+            // Wait a bit for the note editor to mount
+            setTimeout(() => {
+                // Find and click the Record tile button
+                const recordTile = document.querySelector('button:has(.h-7 svg path[d*="M12 18.75"])') as HTMLButtonElement;
+                if (recordTile) {
+                    recordTile.click();
+                    // Wait for the modal to appear and click Start Recording
+                    setTimeout(() => {
+                        const startRecordingButton = document.querySelector('button.bg-blue-500.hover\\:bg-blue-600') as HTMLButtonElement;
+                        if (startRecordingButton) {
+                            startRecordingButton.click();
+                        }
+                    }, 100);
+                }
+            }, 100);
+        } catch (error) {
+            console.error('Microphone permission denied:', error);
+            alert('Microphone access is required for dictation. Please grant permission and try again.');
+        }
     }, [notes, updateNotes]);
 
     const handleDeleteNote = useCallback((id: string) => {
@@ -258,7 +256,7 @@ function App() {
                             onRestoreVersion={handleRestoreVersion}
                             onUpdateTags={handleUpdateTags}
                             transcriber={transcriber}
-                            hasMicrophonePermission={hasMicrophonePermission}
+                            hasMicrophonePermission={true}
                         />
                     ) : (
                         <div className="text-center space-y-8">
@@ -275,17 +273,15 @@ function App() {
                                     </svg>
                                     Create New Note
                                 </button>
-                                {hasMicrophonePermission && (
-                                    <button
-                                        onClick={startDictating}
-                                        className="flex items-center justify-center gap-2 px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors w-64"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                                        </svg>
-                                        Start Dictating
-                                    </button>
-                                )}
+                                <button
+                                    onClick={startDictating}
+                                    className="flex items-center justify-center gap-2 px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors w-64"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                                    </svg>
+                                    Start Dictating
+                                </button>
                             </div>
                         </div>
                     )}

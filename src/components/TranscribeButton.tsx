@@ -14,14 +14,19 @@ export function TranscribeButton(props: Props): JSX.Element {
                 }
             }}
             disabled={isTranscribing}
-            className='text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center mr-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 inline-flex items-center'
+            className='flex-1 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all text-lg font-semibold flex items-center justify-center gap-3 disabled:bg-blue-400 disabled:cursor-not-allowed'
         >
             {isModelLoading ? (
                 <Spinner text={"Loading model..."} />
             ) : isTranscribing ? (
                 <Spinner text={"Transcribing..."} />
             ) : (
-                "Transcribe Audio"
+                <>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                    </svg>
+                    Transcribe Audio
+                </>
             )}
         </button>
     );
@@ -29,11 +34,11 @@ export function TranscribeButton(props: Props): JSX.Element {
 
 export function Spinner(props: { text: string }): JSX.Element {
     return (
-        <div role='status'>
+        <div role='status' className="flex items-center gap-3">
             <svg
                 aria-hidden='true'
                 role='status'
-                className='inline w-4 h-4 mr-3 text-white animate-spin'
+                className='w-6 h-6 text-white animate-spin'
                 viewBox='0 0 100 101'
                 fill='none'
                 xmlns='http://www.w3.org/2000/svg'
@@ -47,7 +52,7 @@ export function Spinner(props: { text: string }): JSX.Element {
                     fill='currentColor'
                 />
             </svg>
-            {props.text}
+            <span className="text-lg">{props.text}</span>
         </div>
     );
 }

@@ -25,7 +25,7 @@ function App() {
     const [isLoaded, setIsLoaded] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [showNoteList, setShowNoteList] = useState(false);
-    const isCreatingNoteRef = useRef(false);
+    const lastTranscriptionRef = useRef<string | null>(null);
 
     useEffect(() => {
         const loadNotes = () => {
@@ -58,28 +58,35 @@ function App() {
         saveNotes(newNotes);
     }, [saveNotes]);
 
-    const handleCreateNote = useCallback((content: string = '') => {
-        if (isCreatingNoteRef.current) return null;
-        
-        isCreatingNoteRef.current = true;
+    const handleCreateNote = useCallback(() => {
         const newNote: Note = {
             id: Date.now().toString(),
             title: 'New Note',
-            content,
+            content: '',
             tags: [],
             versions: []
         };
         updateNotes([...notes, newNote]);
         setSelectedNoteId(newNote.id);
-        setShowNoteList(true);
-        isCreatingNoteRef.current = false;
         return newNote.id;
     }, [notes, updateNotes]);
 
     const handleTranscriptionComplete = useCallback((text: string) => {
-        console.log('Transcription complete:', text);
-        handleCreateNote(text);
-    }, [handleCreateNote]);
+        // Only create a new note if this is a new transcription
+        if (text !== lastTranscriptionRef.current) {
+            lastTranscriptionRef.current = text;
+            const newNote: Note = {
+                id: Date.now().toString(),
+                title: 'Transcribed Note',
+                content: text,
+                tags: [],
+                versions: []
+            };
+            updateNotes([...notes, newNote]);
+            setSelectedNoteId(newNote.id);
+            setShowNoteList(true);
+        }
+    }, [notes, updateNotes]);
 
     const handleDeleteNote = useCallback((id: string) => {
         const updatedNotes = notes.filter(note => note.id !== id);
@@ -226,7 +233,7 @@ function App() {
                             selectedNoteId={selectedNoteId}
                             onSelectNote={setSelectedNoteId}
                             onDeleteNote={handleDeleteNote}
-                            onCreateNote={() => handleCreateNote()}
+                            onCreateNote={handleCreateNote}
                             searchQuery={searchQuery}
                             onSearchChange={setSearchQuery}
                         />
@@ -242,7 +249,7 @@ function App() {
                             />
                         </div>
 
-                        {selectedNoteId ? (
+                        {selectedNoteId && (
                             <div className="bg-white rounded-xl shadow-lg p-6">
                                 <NoteEditor
                                     note={notes.find(note => note.id === selectedNoteId)!}
@@ -253,10 +260,6 @@ function App() {
                                     transcriber={transcriber}
                                     hasMicrophonePermission={true}
                                 />
-                            </div>
-                        ) : (
-                            <div className="text-center py-8 text-slate-500">
-                                Select a note or start recording to begin
                             </div>
                         )}
                     </div>

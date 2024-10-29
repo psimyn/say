@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Editor } from '@tinymce/tinymce-react';
 import { IoCopyOutline } from 'react-icons/io5';
 import { AiOutlineRobot } from 'react-icons/ai';
-import { AudioManager } from "./AudioManager";
 import Transcript from "./Transcript";
 import { Transcriber } from "../hooks/useTranscriber";
 import { useSummarizer } from '../hooks/useSummarizer';
@@ -41,8 +40,8 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
   transcriber, 
   hasMicrophonePermission 
 }) => {
-  const [title, setTitle] = useState(note.title);
-  const [content, setContent] = useState(note.content);
+  const [title, setTitle] = useState(note?.title || '');
+  const [content, setContent] = useState(note?.content || '');
   const [tagInput, setTagInput] = useState('');
   const [showVersionModal, setShowVersionModal] = useState(false);
   const [versionDescription, setVersionDescription] = useState('');
@@ -59,8 +58,10 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
   } = useSummarizer();
 
   useEffect(() => {
-    setTitle(note.title);
-    setContent(note.content);
+    if (note) {
+      setTitle(note.title);
+      setContent(note.content);
+    }
   }, [note]);
 
   const cleanText = (text: string) => {
@@ -96,13 +97,18 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
   }, [transcriber.output, handleTranscriptionUpdate]);
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setTitle(e.target.value);
-    onUpdateNote({ ...note, title: e.target.value });
+    const newTitle = e.target.value;
+    setTitle(newTitle);
+    if (note) {
+      onUpdateNote({ ...note, title: newTitle });
+    }
   };
 
-  const handleEditorChange = (content: string) => {
-    setContent(content);
-    onUpdateNote({ ...note, content });
+  const handleEditorChange = (newContent: string) => {
+    setContent(newContent);
+    if (note) {
+      onUpdateNote({ ...note, content: newContent });
+    }
   };
 
   const handleSummarize = async () => {
@@ -115,7 +121,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
   };
 
   const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && tagInput.trim()) {
+    if (e.key === 'Enter' && tagInput.trim() && note) {
       const newTag = tagInput.trim();
       if (!note.tags.includes(newTag)) {
         const newTags = [...note.tags, newTag];
@@ -126,12 +132,14 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
   };
 
   const handleRemoveTag = (tagToRemove: string) => {
-    const newTags = note.tags.filter(tag => tag !== tagToRemove);
-    onUpdateTags(note.id, newTags);
+    if (note) {
+      const newTags = note.tags.filter(tag => tag !== tagToRemove);
+      onUpdateTags(note.id, newTags);
+    }
   };
 
   const handleSaveVersion = () => {
-    if (versionDescription.trim()) {
+    if (note && versionDescription.trim()) {
       onSaveVersion(note.id, versionDescription.trim());
       setVersionDescription('');
       setShowVersionModal(false);
@@ -186,6 +194,10 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleString();
   };
+
+  if (!note) {
+    return null;
+  }
 
   return (
     <div className="note-editor">
@@ -315,7 +327,6 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
       )}
 
       <div className="w-full flex flex-col my-2 p-4 max-h-[20rem] overflow-y-auto">
-        <AudioManager transcriber={transcriber} />
         <Transcript transcript={transcriber.output?.text || ''} />
       </div>
 

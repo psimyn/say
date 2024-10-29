@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState, useRef } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 import Modal from "./modal/Modal";
 import { UrlInput } from "./modal/UrlInput";
@@ -31,36 +31,22 @@ export function AudioManager({ transcriber, onTranscriptionComplete }: Props) {
     const [audioDownloadUrl, setAudioDownloadUrl] = useState<string | undefined>(undefined);
     const [showUrlModal, setShowUrlModal] = useState(false);
     const [showRecordModal, setShowRecordModal] = useState(false);
-    const lastTranscriptionRef = useRef<string | null>(null);
-    const isTranscriptionHandledRef = useRef(false);
 
     const isAudioLoading = progress !== undefined;
 
     const resetAudio = () => {
         setAudioData(undefined);
         setAudioDownloadUrl(undefined);
-        isTranscriptionHandledRef.current = false;
     };
 
     // Watch for transcription completion
     useEffect(() => {
+        // Only call onTranscriptionComplete when transcription is finished (not busy) and we have output
         if (transcriber.output && !transcriber.isBusy && onTranscriptionComplete) {
-            // Only handle the transcription if it hasn't been handled yet
-            if (!isTranscriptionHandledRef.current) {
-                console.log('Handling transcription:', transcriber.output.text);
-                isTranscriptionHandledRef.current = true;
-                onTranscriptionComplete(transcriber.output.text);
-                resetAudio();
-            }
+            onTranscriptionComplete(transcriber.output.text);
+            resetAudio();
         }
-    }, [transcriber.output, transcriber.isBusy, onTranscriptionComplete]);
-
-    // Reset the transcription handling state when starting a new recording/upload
-    useEffect(() => {
-        if (!audioData) {
-            isTranscriptionHandledRef.current = false;
-        }
-    }, [audioData]);
+    }, [transcriber.output?.text, transcriber.isBusy, onTranscriptionComplete]);
 
     const setAudioFromDownload = async (data: ArrayBuffer, mimeType: string) => {
         const audioCTX = new AudioContext({ sampleRate: Constants.SAMPLING_RATE });
@@ -161,7 +147,6 @@ export function AudioManager({ transcriber, onTranscriptionComplete }: Props) {
 
     const handleTranscribeClick = useCallback(() => {
         if (!audioData) return;
-        isTranscriptionHandledRef.current = false;
         transcriber.onInputChange(); // Reset transcriber state
         transcriber.start(audioData.buffer);
     }, [audioData, transcriber]);

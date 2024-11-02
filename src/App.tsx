@@ -25,6 +25,7 @@ function App() {
     const [isLoaded, setIsLoaded] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [showNoteList, setShowNoteList] = useState(false);
+    const [showInfo, setShowInfo] = useState(true);
     const lastTranscriptionRef = useRef<string | null>(null);
 
     useEffect(() => {
@@ -72,6 +73,7 @@ function App() {
     }, [notes, updateNotes]);
 
     const handleTranscriptionComplete = useCallback((text: string) => {
+        setShowInfo(false);
         // Only create a new note if this is a new transcription
         if (text !== lastTranscriptionRef.current) {
             lastTranscriptionRef.current = text;
@@ -248,6 +250,17 @@ function App() {
                                 onTranscriptionComplete={handleTranscriptionComplete}
                             />
                         </div>
+
+                        {showInfo && (
+                            <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-6">
+                                <h3 className="text-lg font-semibold text-blue-900 mb-2">Welcome to SpeakEZ!</h3>
+                                <p className="text-blue-800">
+                                    This app helps you transcribe your voice recordings into text. When you start recording, 
+                                    it will download a small language model to your device. All processing happens locally 
+                                    on your computer - your audio never leaves your device.
+                                </p>
+                            </div>
+                        )}
 
                         {selectedNoteId && (
                             <div className="bg-white rounded-xl shadow-lg p-6">

@@ -143,6 +143,49 @@ function App() {
         }
     }, [notes, handleUpdateNote]);
 
+    const handleExportNotes = useCallback(() => {
+        const notesBlob = new Blob([JSON.stringify(notes, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(notesBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'speakez-notes-export.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }, [notes]);
+
+    const handleImportNotes = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const importedNotes = JSON.parse(e.target?.result as string);
+                    if (Array.isArray(importedNotes) && importedNotes.every(note => 
+                        typeof note === 'object' && 
+                        'id' in note && 
+                        'title' in note && 
+                        'content' in note
+                    )) {
+                        const migratedNotes = importedNotes.map(note => ({
+                            ...note,
+                            tags: note.tags || [],
+                            versions: note.versions || []
+                        }));
+                        updateNotes(migratedNotes);
+                    } else {
+                        alert('Invalid notes format');
+                    }
+                } catch (error) {
+                    console.error('Error importing notes:', error);
+                    alert('Error importing notes');
+                }
+            };
+            reader.readAsText(file);
+        }
+    }, [updateNotes]);
+
     const filteredNotes = notes.filter(note => {
         const searchLower = searchQuery.toLowerCase();
         return (
@@ -169,62 +212,6 @@ function App() {
                             {showNoteList ? 'Hide Notes' : 'Show Notes'}
                         </button>
                     </div>
-                    <div className="flex gap-2">
-                        <button
-                            onClick={() => {
-                                const notesBlob = new Blob([JSON.stringify(notes, null, 2)], { type: 'application/json' });
-                                const url = URL.createObjectURL(notesBlob);
-                                const a = document.createElement('a');
-                                a.href = url;
-                                a.download = 'speakez-notes-export.json';
-                                document.body.appendChild(a);
-                                a.click();
-                                document.body.removeChild(a);
-                                URL.revokeObjectURL(url);
-                            }}
-                            className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
-                        >
-                            Export Notes
-                        </button>
-                        <label className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 cursor-pointer transition-colors">
-                            Import Notes
-                            <input
-                                type="file"
-                                accept=".json"
-                                onChange={(event) => {
-                                    const file = event.target.files?.[0];
-                                    if (file) {
-                                        const reader = new FileReader();
-                                        reader.onload = (e) => {
-                                            try {
-                                                const importedNotes = JSON.parse(e.target?.result as string);
-                                                if (Array.isArray(importedNotes) && importedNotes.every(note => 
-                                                    typeof note === 'object' && 
-                                                    'id' in note && 
-                                                    'title' in note && 
-                                                    'content' in note
-                                                )) {
-                                                    const migratedNotes = importedNotes.map(note => ({
-                                                        ...note,
-                                                        tags: note.tags || [],
-                                                        versions: note.versions || []
-                                                    }));
-                                                    updateNotes(migratedNotes);
-                                                } else {
-                                                    alert('Invalid notes format');
-                                                }
-                                            } catch (error) {
-                                                console.error('Error importing notes:', error);
-                                                alert('Error importing notes');
-                                            }
-                                        };
-                                        reader.readAsText(file);
-                                    }
-                                }}
-                                className="hidden"
-                            />
-                        </label>
-                    </div>
                 </div>
             </header>
             <main className='flex-grow flex'>
@@ -238,6 +225,8 @@ function App() {
                             onCreateNote={handleCreateNote}
                             searchQuery={searchQuery}
                             onSearchChange={setSearchQuery}
+                            onExportNotes={handleExportNotes}
+                            onImportNotes={handleImportNotes}
                         />
                     </aside>
                 )}
@@ -255,8 +244,9 @@ function App() {
                             <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-6">
                                 <h3 className="text-lg font-semibold text-blue-900 mb-2">Welcome to SpeakEZ!</h3>
                                 <p className="text-blue-800">
-                                    Transcribe your voice recordings into text privately using AI. When you start recording, 
-                                    it will download a small language model to your device. All processing happens locally - your audio never leaves your device. 
+                                    This app helps you transcribe your voice recordings into text. When you start recording, 
+                                    it will download a ~1.5GB language model to your device. All processing happens locally 
+                                    on your computer - your audio never leaves your device.
                                 </p>
                             </div>
                         )}

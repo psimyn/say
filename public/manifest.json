@@ -1,34 +1,66 @@
 {
-  "manifest_version": 3,
-  "name": "Scribe",
-  "version": "1.0",
-  "description": "A note-taking app with speech-to-text capabilities",
-  "icons": {
-    "16": "icon16.png",
-    "48": "icon48.png",
-    "128": "icon128.png"
-  },
-  "action": {
-    "default_title": "Scribe"
-  },
-  "side_panel": {
-    "default_path": "index.html"
-  },
-  "permissions": [
-    "sidePanel",
-    "storage",
-    "microphone"
-  ],
-  "content_scripts": [
+  "short_name": "Scribe",
+  "name": "Scribe: Transcription app",
+  "icons": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["src/contentScript.ts"]
+      "src": "/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512"
+    },
+    {
+      "src": "/icon128.png",
+      "type": "image/png",
+      "sizes": "128x128"
+    },
+    {
+      "src": "/icon48.png",
+      "type": "image/png",
+      "sizes": "48x48"
+    },
+    {
+      "src": "/icon16.png",
+      "type": "image/png",
+      "sizes": "16x16"
     }
   ],
-  "web_accessible_resources": [
+  "id": "/?source=pwa",
+  "start_url": "/?source=pwa",
+  "background_color": "#1e293b",
+  "display": "standalone",
+  "scope": "/",
+  "theme_color": "#ffffff",
+  "description": "Easily record and transcribe your audio files into text using AI. Free, private, and local.",
+  "screenshots": [
     {
-      "resources": ["src/pages/permission/index.html", "src/pages/permission/requestPermission.ts"],
-      "matches": ["<all_urls>"]
+      "src": "/screenshot-01@1x.jpg",
+      "type": "image/jpg",
+      "sizes": "1200x628",
+      "form_factor": "wide"
+    },
+    {
+      "src": "/screenshot-02@1x.jpg",
+      "type": "image/jpg",
+      "sizes": "1200x628",
+      "form_factor": "wide"
+    },
+    {
+      "src": "/screenshot-03@1x.jpg",
+      "type": "image/jpg",
+      "sizes": "1200x628",
+      "form_factor": "wide"
+    },
+    {
+      "src": "/screenshot-04@1x.jpg",
+      "type": "image/jpg",
+      "sizes": "1200x628",
+      "form_factor": "wide"
+    },
+    {
+      "src": "/screenshot-mobile.png",
+      "type": "image/png",
+      "sizes": "1170x2532",
+      "form_factor": "narrow"
     }
   ]
 }
+

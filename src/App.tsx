@@ -214,9 +214,9 @@ function App() {
                     </div>
                 </div>
             </header>
-            <main className='flex-grow flex'>
+            <main className='flex-grow flex flex-col md:flex-row'>
                 {showNoteList && (
-                    <aside className='w-72 bg-white border-r border-slate-200 p-4 overflow-y-auto'>
+                    <aside className='w-full md:w-72 bg-white border-b md:border-r border-slate-200 p-4 overflow-y-auto'>
                         <NoteList
                             notes={filteredNotes}
                             selectedNoteId={selectedNoteId}
@@ -230,10 +230,10 @@ function App() {
                         />
                     </aside>
                 )}
-                <section className={`flex-grow p-4 ${showNoteList ? 'w-[calc(100%-18rem)]' : 'w-full'}`}>
-                    <div className="max-w-4xl mx-auto">
-                        <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-                            <h2 className="text-2xl font-semibold mb-4">Quick Record</h2>
+                <section className={`flex-grow p-2 md:p-4 ${showNoteList ? 'md:w-[calc(100%-18rem)]' : 'w-full'}`}>
+                    <div className="max-w-4xl mx-auto space-y-4 md:space-y-6">
+                        <div className="bg-white rounded-xl shadow-lg p-4 md:p-6">
+                            <h2 className="text-xl md:text-2xl font-semibold mb-4">Quick Record</h2>
                             <AudioManager 
                                 transcriber={transcriber}
                                 onTranscriptionComplete={handleTranscriptionComplete}
@@ -241,9 +241,9 @@ function App() {
                         </div>
 
                         {showInfo && (
-                            <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-6">
-                                <h3 className="text-lg font-semibold text-blue-900 mb-2">Welcome to Scribe!</h3>
-                                <p className="text-blue-800">
+                            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 md:p-6">
+                                <h3 className="text-base md:text-lg font-semibold text-blue-900 mb-2">Welcome to Scribe!</h3>
+                                <p className="text-sm md:text-base text-blue-800">
                                     Easily record and transcribe your audio files into text using AI. When you start recording, 
                                     it will download a small language model to your device. All processing happens privately and locally 
                                     - your audio never leaves your computer.
@@ -252,7 +252,7 @@ function App() {
                         )}
 
                         {selectedNoteId && (
-                            <div className="bg-white rounded-xl shadow-lg p-6">
+                            <div className="bg-white rounded-xl shadow-lg p-4 md:p-6">
                                 <NoteEditor
                                     note={notes.find(note => note.id === selectedNoteId)!}
                                     onUpdateNote={handleUpdateNote}

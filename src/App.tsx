@@ -255,9 +255,8 @@ function App() {
                             <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-6">
                                 <h3 className="text-lg font-semibold text-blue-900 mb-2">Welcome to SpeakEZ!</h3>
                                 <p className="text-blue-800">
-                                    This app helps you transcribe your voice recordings into text. When you start recording, 
-                                    it will download a small language model to your device. All processing happens locally 
-                                    on your computer - your audio never leaves your device.
+                                    Transcribe your voice recordings into text privately using AI. When you start recording, 
+                                    it will download a small language model to your device. All processing happens locally - your audio never leaves your device. 
                                 </p>
                             </div>
                         )}

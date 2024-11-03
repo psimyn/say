@@ -19,6 +19,12 @@ interface Props {
     onImportNotes: (event: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
+const stripHtml = (html: string) => {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    return tmp.textContent || tmp.innerText || '';
+};
+
 const NoteList: React.FC<Props> = ({
     notes,
     selectedNoteId,
@@ -73,7 +79,7 @@ const NoteList: React.FC<Props> = ({
                             </button>
                         </div>
                         <p className="text-sm text-gray-600 mt-1 line-clamp-2">
-                            {note.content}
+                            {stripHtml(note.content)}
                         </p>
                         {note.tags && note.tags.length > 0 && (
                             <div className="flex flex-wrap gap-1 mt-2">

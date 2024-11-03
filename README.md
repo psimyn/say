@@ -1,4 +1,4 @@
-# SpeakEZ
+# Scribe
 
 An AI notes app.
 

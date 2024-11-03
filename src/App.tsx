@@ -148,7 +148,7 @@ function App() {
         const url = URL.createObjectURL(notesBlob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'speakez-notes-export.json';
+        a.download = 'scribe-notes-export.json';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -204,7 +204,7 @@ function App() {
             <header className='bg-slate-800 text-white p-4 shadow-lg'>
                 <div className="flex justify-between items-center">
                     <div className="flex items-center gap-4">
-                        <h1 className='text-3xl font-bold'>SpeakEZ</h1>
+                        <h1 className='text-3xl font-bold'>Scribe</h1>
                         <button
                             onClick={() => setShowNoteList(!showNoteList)}
                             className="px-3 py-1 text-sm bg-slate-700 hover:bg-slate-600 rounded-md transition-colors"
@@ -242,11 +242,11 @@ function App() {
 
                         {showInfo && (
                             <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-6">
-                                <h3 className="text-lg font-semibold text-blue-900 mb-2">Welcome to SpeakEZ!</h3>
+                                <h3 className="text-lg font-semibold text-blue-900 mb-2">Welcome to Scribe!</h3>
                                 <p className="text-blue-800">
-                                    Transcribe your voice recordings into text using AI, privately. When you start recording, 
-                                    it will download a small language model to your device. All processing happens locally 
-                                    - your audio never leaves your device.
+                                    Easily record and transcribe your audio files into text using AI. When you start recording, 
+                                    it will download a small language model to your device. All processing happens privately and locally 
+                                    - your audio never leaves your computer.
                                 </p>
                             </div>
                         )}

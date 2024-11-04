@@ -19,6 +19,8 @@ interface Note {
   content: string;
   tags: string[];
   versions: NoteVersion[];
+  created: number;
+  lastEdited: number;
 }
 
 interface NoteEditorProps {
@@ -192,7 +194,13 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
   };
 
   const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleString();
+    return new Date(timestamp).toLocaleString(undefined, {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   if (!note) {
@@ -213,6 +221,11 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
           <div>Words: {getWordCount(content)}</div>
           <div>Characters: {getCharacterCount(content)}</div>
         </div>
+      </div>
+
+      <div className="text-sm text-gray-600 mb-4 space-y-1">
+        <div>Created: {formatDate(note.created)}</div>
+        <div>Last edited: {formatDate(note.lastEdited)}</div>
       </div>
 
       <div className="mb-4">

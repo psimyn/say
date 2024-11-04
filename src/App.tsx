@@ -16,6 +16,8 @@ interface Note {
   content: string;
   tags: string[];
   versions: NoteVersion[];
+  created: number;
+  lastEdited: number;
 }
 
 function App() {
@@ -37,7 +39,9 @@ function App() {
                     const migratedNotes = parsedNotes.map((note: any) => ({
                         ...note,
                         tags: note.tags || [],
-                        versions: note.versions || []
+                        versions: note.versions || [],
+                        created: note.created || Date.now(),
+                        lastEdited: note.lastEdited || Date.now()
                     }));
                     setNotes(migratedNotes);
                 } catch (error) {
@@ -60,12 +64,15 @@ function App() {
     }, [saveNotes]);
 
     const handleCreateNote = useCallback(() => {
+        const now = Date.now();
         const newNote: Note = {
-            id: Date.now().toString(),
+            id: now.toString(),
             title: 'New Note',
             content: '',
             tags: [],
-            versions: []
+            versions: [],
+            created: now,
+            lastEdited: now
         };
         updateNotes([...notes, newNote]);
         setSelectedNoteId(newNote.id);
@@ -77,12 +84,15 @@ function App() {
         // Only create a new note if this is a new transcription
         if (text !== lastTranscriptionRef.current) {
             lastTranscriptionRef.current = text;
+            const now = Date.now();
             const newNote: Note = {
-                id: Date.now().toString(),
+                id: now.toString(),
                 title: 'Transcribed Note',
                 content: text,
                 tags: [],
-                versions: []
+                versions: [],
+                created: now,
+                lastEdited: now
             };
             updateNotes([...notes, newNote]);
             setSelectedNoteId(newNote.id);
@@ -100,7 +110,7 @@ function App() {
 
     const handleUpdateNote = useCallback((updatedNote: Note) => {
         const updatedNotes = notes.map(note => 
-            note.id === updatedNote.id ? updatedNote : note
+            note.id === updatedNote.id ? { ...updatedNote, lastEdited: Date.now() } : note
         );
         updateNotes(updatedNotes);
     }, [notes, updateNotes]);
@@ -115,7 +125,8 @@ function App() {
             };
             const updatedNote = {
                 ...note,
-                versions: [...note.versions, newVersion]
+                versions: [...note.versions, newVersion],
+                lastEdited: Date.now()
             };
             handleUpdateNote(updatedNote);
         }
@@ -126,7 +137,8 @@ function App() {
         if (note) {
             const updatedNote = {
                 ...note,
-                content: version.content
+                content: version.content,
+                lastEdited: Date.now()
             };
             handleUpdateNote(updatedNote);
         }
@@ -137,7 +149,8 @@ function App() {
         if (note) {
             const updatedNote = {
                 ...note,
-                tags
+                tags,
+                lastEdited: Date.now()
             };
             handleUpdateNote(updatedNote);
         }
@@ -168,10 +181,13 @@ function App() {
                         'title' in note && 
                         'content' in note
                     )) {
+                        const now = Date.now();
                         const migratedNotes = importedNotes.map(note => ({
                             ...note,
                             tags: note.tags || [],
-                            versions: note.versions || []
+                            versions: note.versions || [],
+                            created: note.created || now,
+                            lastEdited: note.lastEdited || now
                         }));
                         updateNotes(migratedNotes);
                     } else {

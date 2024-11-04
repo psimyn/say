@@ -5,6 +5,8 @@ interface Note {
     title: string;
     content: string;
     tags: string[];
+    created: number;
+    lastEdited: number;
 }
 
 interface Props {
@@ -23,6 +25,15 @@ const stripHtml = (html: string) => {
     const tmp = document.createElement('div');
     tmp.innerHTML = html;
     return tmp.textContent || tmp.innerText || '';
+};
+
+const formatDate = (timestamp: number) => {
+    const date = new Date(timestamp);
+    return date.toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    });
 };
 
 const NoteList: React.FC<Props> = ({
@@ -93,6 +104,9 @@ const NoteList: React.FC<Props> = ({
                                 ))}
                             </div>
                         )}
+                        <div className="text-xs text-gray-500 mt-2">
+                            Last edited: {formatDate(note.lastEdited)}
+                        </div>
                     </div>
                 ))}
             </div>

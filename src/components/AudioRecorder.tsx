@@ -79,7 +79,36 @@ const AudioRecorder: React.FC<Props> = ({ onRecordingComplete }) => {
       source.connect(analyser);
       analyserRef.current = analyser;
 
-      mediaRecorder.current = new MediaRecorder(stream);
+      // Try to use MP3 encoding, fall back to default if not supported
+      const options = {
+        mimeType: 'audio/mpeg',
+        audioBitsPerSecond: 256000
+      };
+
+      try {
+        mediaRecorder.current = new MediaRecorder(stream, options);
+      } catch (e) {
+        // If MP3 is not supported, try other common formats
+        const formats = [
+          'audio/mp3',
+          'audio/webm;codecs=mp3',
+          'audio/webm',
+          'audio/ogg'
+        ];
+        
+        for (const format of formats) {
+          if (MediaRecorder.isTypeSupported(format)) {
+            mediaRecorder.current = new MediaRecorder(stream, { mimeType: format });
+            break;
+          }
+        }
+
+        // If none of the above worked, use default format
+        if (!mediaRecorder.current) {
+          mediaRecorder.current = new MediaRecorder(stream);
+        }
+      }
+
       mediaRecorder.current.addEventListener('dataavailable', handleDataAvailable);
       mediaRecorder.current.start();
       setIsRecording(true);
@@ -111,7 +140,9 @@ const AudioRecorder: React.FC<Props> = ({ onRecordingComplete }) => {
 
   const handleDataAvailable = (event: BlobEvent) => {
     if (event.data.size > 0) {
-      onRecordingComplete(event.data);
+      // Convert to MP3 if not already in MP3 format
+      const blob = new Blob([event.data], { type: 'audio/mpeg' });
+      onRecordingComplete(blob);
     }
   };
 

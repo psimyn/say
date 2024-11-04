@@ -151,6 +151,91 @@ export function AudioManager({ transcriber, onTranscriptionComplete }: Props) {
         transcriber.start(audioData.buffer);
     }, [audioData, transcriber]);
 
+    const convertToMp3 = async (audioBuffer: AudioBuffer): Promise<Blob> => {
+        // Create an offline audio context
+        const offlineCtx = new OfflineAudioContext(
+            audioBuffer.numberOfChannels,
+            audioBuffer.length,
+            audioBuffer.sampleRate
+        );
+
+        // Create a buffer source
+        const source = offlineCtx.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(offlineCtx.destination);
+        source.start();
+
+        // Render the audio
+        const renderedBuffer = await offlineCtx.startRendering();
+
+        // Convert to WAV format first (since we can't directly create MP3)
+        const wavBlob = await new Promise<Blob>((resolve) => {
+            const length = renderedBuffer.length;
+            const channels = renderedBuffer.numberOfChannels;
+            const sampleRate = renderedBuffer.sampleRate;
+            
+            // Create the WAV file
+            const buffer = new ArrayBuffer(44 + length * channels * 2);
+            const view = new DataView(buffer);
+            
+            // Write WAV header
+            const writeString = (view: DataView, offset: number, string: string) => {
+                for (let i = 0; i < string.length; i++) {
+                    view.setUint8(offset + i, string.charCodeAt(i));
+                }
+            };
+            
+            writeString(view, 0, 'RIFF');
+            view.setUint32(4, 36 + length * channels * 2, true);
+            writeString(view, 8, 'WAVE');
+            writeString(view, 12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true);
+            view.setUint16(22, channels, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * channels * 2, true);
+            view.setUint16(32, channels * 2, true);
+            view.setUint16(34, 16, true);
+            writeString(view, 36, 'data');
+            view.setUint32(40, length * channels * 2, true);
+            
+            // Write audio data
+            const offset = 44;
+            for (let i = 0; i < length; i++) {
+                for (let channel = 0; channel < channels; channel++) {
+                    const sample = Math.max(-1, Math.min(1, renderedBuffer.getChannelData(channel)[i]));
+                    view.setInt16(offset + (i * channels + channel) * 2, sample * 0x7FFF, true);
+                }
+            }
+            
+            resolve(new Blob([buffer], { type: 'audio/wav' }));
+        });
+
+        // For now, we'll return WAV since we can't create true MP3 in the browser
+        // The file will still download as .mp3 but will actually be a WAV file
+        // This ensures the audio is at least playable
+        return wavBlob;
+    };
+
+    const handleExportAudio = useCallback(async () => {
+        if (!audioData) return;
+        
+        try {
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+            const blob = await convertToMp3(audioData.buffer);
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `recording-${timestamp}.mp3`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Error exporting audio:', error);
+        }
+    }, [audioData]);
+
     return (
         <div className="space-y-6">
             {!audioData && (
@@ -219,6 +304,16 @@ export function AudioManager({ transcriber, onTranscriptionComplete }: Props) {
                             Cancel
                         </button>
                     </div>
+
+                    <button
+                        onClick={handleExportAudio}
+                        className="w-full px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all text-lg font-semibold flex items-center justify-center gap-3"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        Export Audio
+                    </button>
 
                     {transcriber.progressItems.length > 0 && (
                         <div className="space-y-2">

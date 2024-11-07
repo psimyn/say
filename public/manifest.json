@@ -56,7 +56,19 @@
       "form_factor": "wide"
     },
     {
-      "src": "/screenshot-mobile.png",
+      "src": "/screenshot-mobile@1x.jpg",
+      "type": "image/png",
+      "sizes": "1170x2532",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "/screenshot-mobile-2@1x.jpg",
+      "type": "image/png",
+      "sizes": "1170x2532",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "/screenshot-mobile-3@1x.jpg",
       "type": "image/png",
       "sizes": "1170x2532",
       "form_factor": "narrow"

@@ -1,6 +1,6 @@
 {
-  "short_name": "Scribe",
-  "name": "Scribe: Transcription app",
+  "short_name": "Say",
+  "name": "Say: Transcription app",
   "icons": [
     {
       "src": "/icon.svg",

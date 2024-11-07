@@ -1,4 +1,4 @@
-# Scribe Application Requirements
+# Say Application Requirements
 
 ## Overview
 This is a sophisticated note-taking application that combines traditional text editing with advanced features like voice dictation and AI-powered text summarization. The application provides a seamless experience for creating, managing, and organizing notes with support for rich text editing, audio transcription, and smart content summarization.

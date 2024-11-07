@@ -220,7 +220,7 @@ function App() {
             <header className='bg-slate-800 text-white p-4 shadow-lg'>
                 <div className="flex justify-between items-center">
                     <div className="flex items-center gap-4">
-                        <h1 className='text-3xl font-bold'>Scribe</h1>
+                        <h1 className='text-3xl font-bold'>Say</h1>
                         <button
                             onClick={() => setShowNoteList(!showNoteList)}
                             className="px-3 py-1 text-sm bg-slate-700 hover:bg-slate-600 rounded-md transition-colors"
@@ -258,13 +258,19 @@ function App() {
 
                         {showInfo && (
                             <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 md:p-6">
-                                <h3 className="text-base md:text-lg font-semibold text-blue-900 mb-2">Welcome to Scribe!</h3>
-                                <p className="text-sm md:text-base text-blue-800">
-                                    Easily record and transcribe your audio files into text using AI. When you start recording, 
-                                    it will download a small language model to your device. All processing happens privately and locally 
-                                    - your audio never leaves your computer.
-                                </p>
-                            </div>
+    <h3 className="text-base md:text-lg font-semibold text-blue-900 mb-2">Welcome to Say!</h3>
+    <p className="text-sm md:text-base text-blue-800">
+        Easily record and transcribe your audio files into text using AI. When you start recording, 
+        it will download a small language model to your device. All processing happens privately and locally.
+    </p>
+    <ul className="list-disc list-inside pl-4 text-blue-800 md:p-6">
+        <li>🎙️ High-quality on-device transcription with Whisper (tiny or base)</li>
+        <li>📂 Transcribe recordings, local and hosted audio files</li>
+        <li>📝 Rich-text editing, note management, and versioning</li>
+        <li>✍️ AI summaries of notes powered by T5</li>
+        <li>🔄 Export and import all your notes any time</li>
+    </ul>
+</div>
                         )}
 
                         {selectedNoteId && (

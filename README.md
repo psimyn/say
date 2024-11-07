@@ -1,4 +1,4 @@
-# Scribe
+# Say
 
 An AI notes app.
 

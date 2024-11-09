@@ -263,7 +263,7 @@ function App() {
         Easily record and transcribe your audio files into text using AI. When you start recording, 
         it will download a small language model to your device. All processing happens privately and locally.
     </p>
-    <ul className="list-disc list-inside pl-4 text-blue-800 md:p-6">
+    <ul className="text-sm md:text-base list-disc list-inside pl-4 text-blue-800 md:p-6 p-6">
         <li>🎙️ High-quality on-device transcription with Whisper (tiny or base)</li>
         <li>📂 Transcribe recordings, local and hosted audio files</li>
         <li>📝 Rich-text editing, note management, and versioning</li>

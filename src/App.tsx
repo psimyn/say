@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import NoteList from './components/NoteList';
 import NoteEditor from './components/NoteEditor';
 import { useTranscriber } from "./hooks/useTranscriber";
@@ -202,14 +202,16 @@ function App() {
         }
     }, [updateNotes]);
 
-    const filteredNotes = notes.filter(note => {
+    const filteredNotes = useMemo(() => {
         const searchLower = searchQuery.toLowerCase();
-        return (
-            note.title.toLowerCase().includes(searchLower) ||
-            note.content.toLowerCase().includes(searchLower) ||
-            note.tags.some(tag => tag.toLowerCase().includes(searchLower))
-        );
-    });
+        return notes.filter(note => {
+            return (
+                note.title.toLowerCase().includes(searchLower) ||
+                note.content.toLowerCase().includes(searchLower) ||
+                note.tags.some(tag => tag.toLowerCase().includes(searchLower))
+            );
+        })
+    }, [notes, searchQuery]);
 
     if (!isLoaded) {
         return <div>Loading...</div>;

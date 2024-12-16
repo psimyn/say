@@ -2,6 +2,8 @@
 
 Say is a modern voice transcription app that transforms your voice into text using advanced machine learning, right in your browser. Built with React and powered by Whisper, T5 and Transformers.js, it offers a seamless experience for recording, transcribing, and managing your spoken notes.
 
+![](https://say.addy.ie/screenshot-01@1x.jpg)
+
 ## ✨ Features
 
 - 🎙️ **Browser-based Recording**: Record audio directly in your browser with a clean, intuitive interface

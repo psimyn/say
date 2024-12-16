@@ -73,10 +73,8 @@ const transcribe = async (
 
     const isDistilWhisper = model.startsWith("distil-whisper/");
 
-    let modelName = model;
-    if (!isDistilWhisper && !multilingual) {
-        modelName += ".en"
-    }
+    // Use the model name directly since it's already properly formatted in ModelSelector.tsx
+    const modelName = model;
 
     const p = AutomaticSpeechRecognitionPipelineFactory;
     if (p.model !== modelName || p.quantized !== quantized) {

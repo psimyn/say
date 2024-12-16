@@ -8,6 +8,7 @@ import Constants from "../utils/Constants";
 import { Transcriber } from "../hooks/useTranscriber";
 import Progress from "./Progress";
 import AudioRecorder from "./AudioRecorder";
+import { ModelSelector } from "./ModelSelector";
 
 export enum AudioSource {
     URL = "URL",
@@ -151,6 +152,13 @@ export function AudioManager({ transcriber, onTranscriptionComplete }: Props) {
         transcriber.start(audioData.buffer);
     }, [audioData, transcriber]);
 
+    const handleModelChange = useCallback((modelId: string) => {
+        transcriber.setModel(modelId);
+        // Update multilingual setting based on model selection
+        const isEnglishOnly = modelId.endsWith('.en');
+        transcriber.setMultilingual(!isEnglishOnly);
+    }, [transcriber]);
+
     const convertToMp3 = async (audioBuffer: AudioBuffer): Promise<Blob> => {
         // Create an offline audio context
         const offlineCtx = new OfflineAudioContext(
@@ -238,6 +246,7 @@ export function AudioManager({ transcriber, onTranscriptionComplete }: Props) {
 
     return (
         <div className="space-y-6">
+
             {!audioData && (
                 <div className="flex flex-col items-center gap-4">
                     <button
@@ -276,6 +285,12 @@ export function AudioManager({ transcriber, onTranscriptionComplete }: Props) {
                     </div>
                 </div>
             )}
+            
+            <ModelSelector 
+                selectedModel={transcriber.model}
+                onModelChange={handleModelChange}
+                className="mb-6"
+            />
 
             {isAudioLoading && (
                 <div className="w-full bg-gray-200 rounded-full h-1">
